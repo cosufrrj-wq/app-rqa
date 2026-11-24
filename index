@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RQA - Lançamento</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+</script>
+<style>
+*{box-sizing:border-box;font-family:system-ui,sans-serif}
+body{margin:0;background:#0f172a;color:white;padding:16px;padding-bottom:140px}
+h1{font-size:22px;margin:0}
+.card{background:#1e293b;border-radius:16px;padding:16px;margin-top:16px}
+input,select{width:100%;padding:13px;border-radius:12px;border:1px solid #334155;background:#0f172a;color:white;margin-top:10px;font-size:15px}
+label{font-size:12px;opacity:.7;margin-top:12px;display:block}
+button{width:100%;padding:15px;border:0;border-radius:14px;background:#22c55e;color:#000;font-weight:800;font-size:17px;margin-top:12px;cursor:pointer}
+.btn2{background:#334155;color:white;font-size:14px;padding:10px}
+.btnBlue{background:#3b82f6;color:white;font-size:14px;padding:12px}
+.item{padding:12px 0;border-bottom:1px solid #334155;display:flex;justify-content:space-between;gap:10px}
+.item.novo{background:#14532d;border-radius:10px;padding:12px}
+.badge{display:inline-block;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:700;margin-top:4px;background:#3b82f6}
+.del{background:none;color:#ef4444;width:auto;padding:0;font-size:18px;border:0;flex-shrink:0}
+.fab{position:fixed;bottom:28px;right:20px;width:62px;height:62px;border-radius:50%;background:#22c55e;color:#000;font-size:32px;border:0;z-index:50;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:100} .modal.open{display:flex}
+.modal-box{background:#1e293b;width:100%;border-radius:18px 18px 0 0;padding:16px;max-height:92vh;overflow:auto}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#22c55e;color:#000;padding:12px 18px;border-radius:99px;font-weight:700;z-index:200;display:none}
+.error{color:#fca5a5;font-size:13px;font-weight:700;display:none;margin-top:8px}
+#status{font-size:12px;opacity:.7;text-align:center;margin-top:8px}
+.acao-Atenção{background:#f59e0b;color:#000}
+.acao-Desvio{background:#3b82f6}
+.acao-Interdição{background:#ef4444}
+.acao-Sinalização{background:#8b5cf6}
+.acao-Limpeza{background:#22c55e;color:#000}
+.acao-Monitoramento{background:#06b6d4;color:#000}
+</style>
+</head>
+<body>
+<h1>📋 RQA - Lançamento</h1>
+<p style="opacity:.7;margin:4px 0">Funciona sem internet • Sincroniza com Lançamento_RQA</p>
+<div id="status">🔄 Carregando...</div>
+<div class="toast" id="toast">✅ Salvo!</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h3 style="margin:0">Registros <span id="qtd" style="opacity:.6;font-size:14px"></span></h3>
+    <span id="pendInfo" style="font-size:12px;opacity:.7"></span>
+  </div>
+  <label>Filtrar por data</label>
+  <input type="date" id="filtroData">
+  <button id="btnLimparFiltro" class="btn2">Mostrar todos</button>
+  <label>Filtrar por Ação</label>
+  <select id="filtroAcao"><option value="Todas">Todas as ações</option><option value="Atenção">Atenção</option><option value="Desvio">Desvio</option><option value="Interdição">Interdição</option><option value="Sinalização">Sinalização</option><option value="Limpeza">Limpeza</option><option value="Monitoramento">Monitoramento</option><option value="Outros">Outros</option></select>
+  <label>Filtrar por Responsável</label>
+  <select id="filtroResp"><option value="Todos">Todos</option></select>
+  <div id="lista" style="margin-top:12px"></div>
+  <button id="btnSync" class="btn2">🔄 Sincronizar agora</button>
+  <button id="btnPuxar" class="btn2" style="background:#3b82f6;color:white">⬇️ Puxar da planilha</button>
+  <button id="btnCopiar" class="btnBlue">📤 Copiar resumo filtrado</button>
+</div>
+
+<button class="fab" id="fabBtn">➕</button>
+<div class="modal" id="modal"><div class="modal-box">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">➕ Novo RQA</h3><button id="btnFechar" style="width:auto;padding:8px 14px;background:#334155;color:white;border-radius:99px">✕</button></div>
+  <label>Data do RQA *</label><input type="date" id="data">
+  <label>Descrição *</label><input type="text" id="desc" placeholder="Ex: Animais na pista, Árvore caída, Buraco">
+  <label>Ação *</label>
+  <select id="acao">
+    <option value="">Selecione a ação</option>
+    <option value="Atenção">Atenção</option>
+    <option value="Desvio">Desvio</option>
+    <option value="Interdição">Interdição</option>
+    <option value="Sinalização">Sinalização</option>
+    <option value="Limpeza">Limpeza</option>
+    <option value="Monitoramento">Monitoramento</option>
+    <option value="Outros">Outros</option>
+  </select>
+  <label>Responsável *</label>
+  <select id="resp"><option value="">Selecione quem lançou</option><option value="Charles">Charles</option><option value="Evelyn">Evelyn</option><option value="Lucas CIAAT">Lucas CIAAT</option><option value="Aris Jonas">Aris Jonas</option><option value="Roberta">Roberta</option></select>
+  <input type="text" id="respOutro" placeholder="Ou digite outro responsável" style="display:none">
+  <div id="erroForm" class="error"></div>
+  <button id="btnAdd">Salvar RQA - Salva offline</button>
+</div></div>
+
+<script>
+var URL_BASE = "COLE_SEU_LINK_AQUI";
+var lancamentos = [];
+var ultimoId = null;
+try{
+  var g = localStorage.getItem('rqa_off'); if(g) lancamentos = JSON.parse(g);
+}catch(e){}
+document.getElementById('data').valueAsDate = new Date();
+function fmtDataISOParaBR(iso){ if(!iso) return ""; var p = iso.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
+function isoDeBR(br){ var p = String(br).split("/"); if(p.length!==3) return ""; return p[2]+"-"+p[1].padStart(2,'0')+"-"+p[0].padStart(2,'0'); }
+function setStatus(t){ document.getElementById('status').innerText = t; }
+function showToast(msg){ var el=document.getElementById('toast'); el.textContent=msg; el.style.display='block'; setTimeout(function(){el.style.display='none'},2800); }
+function fecharModal(){ document.getElementById('modal').classList.remove('open'); }
+function salvarLocal(){ try{ localStorage.setItem('rqa_off', JSON.stringify(lancamentos)); }catch(e){} atualizar(); }
+
+document.getElementById('fabBtn').addEventListener('click', function(){ document.getElementById('modal').classList.add('open'); });
+document.getElementById('btnFechar').addEventListener('click', fecharModal);
+document.getElementById('modal').addEventListener('click', function(e){ if(e.target.id==='modal') fecharModal(); });
+document.getElementById('resp').addEventListener('change', function(){
+  document.getElementById('respOutro').style.display = (this.value === 'Outros' ? 'block' : 'none');
+});
+document.getElementById('btnAdd').addEventListener('click', adicionar);
+document.getElementById('btnSync').addEventListener('click', function(){ sincronizar(false); });
+document.getElementById('btnPuxar').addEventListener('click', function(){ puxarDaPlanilha(false); });
+document.getElementById('btnCopiar').addEventListener('click', copiarResumo);
+document.getElementById('btnLimparFiltro').addEventListener('click', function(){ document.getElementById('filtroData').value=''; atualizar(); });
+document.getElementById('filtroData').addEventListener('change', atualizar);
+document.getElementById('filtroAcao').addEventListener('change', atualizar);
+document.getElementById('filtroResp').addEventListener('change', atualizar);
+
+function adicionar(){
+  var dataInput = document.getElementById('data').value;
+  var desc = document.getElementById('desc').value.trim();
+  var acao = document.getElementById('acao').value;
+  var respSel = document.getElementById('resp').value;
+  var resp = respSel;
+  var faltando = [];
+  if(!dataInput) faltando.push('Data');
+  if(!desc) faltando.push('Descrição');
+  if(!acao) faltando.push('Ação');
+  if(!respSel) faltando.push('Responsável');
+  if(faltando.length){
+    var el = document.getElementById('erroForm');
+    el.textContent = '⚠️ Preencha: ' + faltando.join(', ');
+    el.style.display = 'block';
+    return;
+  }
+  document.getElementById('erroForm').style.display = 'none';
+  var novoId = String(Date.now());
+  ultimoId = novoId;
+  var g = {id: novoId, data: fmtDataISOParaBR(dataInput), dataISO: dataInput, desc: desc, acao: acao, resp: resp, status: 'pendente'};
+  lancamentos.unshift(g);
+  salvarLocal();
+  document.getElementById('desc').value = '';
+  document.getElementById('acao').value = '';
+  fecharModal();
+  showToast('✅ RQA salvo! ' + desc);
+  sincronizar(true);
+}
+
+function sincronizar(silencioso){
+  var pend = lancamentos.filter(function(g){ return g.status==='pendente'; });
+  if(pend.length===0){ if(!silencioso) alert('Nada para sincronizar'); return; }
+  if(!navigator.onLine){ if(!silencioso) alert('Sem internet. Ficou salvo no celular.'); return; }
+  if(URL_BASE.indexOf('COLE_SEU') > -1){ if(!silencioso) alert('Falta colar o link do Apps Script no código.'); return; }
+  setStatus('🔄 Sincronizando '+pend.length+'...');
+  pend.forEach(function(g){
+    var params = new URLSearchParams({acao: 'adicionar', data: g.data, desc: g.desc, acao_rqa: g.acao, resp: g.resp, id: g.id});
+    fetch(URL_BASE + '?' + params.toString(), {method: 'GET', mode: 'no-cors'}).then(function(){ g.status='sincronizado'; salvarLocal(); }).catch(function(){});
+  });
+}
+
+function puxarDaPlanilha(silencioso){
+  if(!navigator.onLine){ if(!silencioso) alert('Sem internet para puxar.'); return; }
+  if(URL_BASE.indexOf('COLE_SEU') > -1){ if(!silencioso) alert('Falta colar o link do Apps Script no código.'); return; }
+  setStatus('⬇️ Puxando da planilha...');
+  fetch(URL_BASE + '?acao=listar').then(function(res){ return res.text(); }).then(function(texto){
+    try{
+      var lista = JSON.parse(texto);
+      var novos = 0;
+      var ids = {}; lancamentos.forEach(function(x){ ids[x.id]=true; });
+      lista.forEach(function(item){
+        if(!ids[item.id]){
+          lancamentos.push({id: item.id, data: item.data, dataISO: isoDeBR(item.data), desc: item.desc, acao: item.acao, resp: item.resp, status: 'sincronizado'});
+          novos++;
+        }
+      });
+      lancamentos.sort(function(a,b){ return String(b.dataISO).localeCompare(String(a.dataISO)); });
+      salvarLocal();
+      if(!silencioso) alert(novos===0 ? 'Nenhum RQA novo.' : 'Puxei '+novos+' RQA(s) novo(s)!');
+    }catch(e){ if(!silencioso) alert('Erro ao ler planilha.'); }
+  }).catch(function(){ if(!silencioso) alert('Sem conexão com a planilha.'); });
+}
+
+function filtrar(){
+  var dataF = document.getElementById('filtroData').value;
+  var acaoF = document.getElementById('filtroAcao').value;
+  var respF = document.getElementById('filtroResp').value;
+  return lancamentos.filter(function(g){
+    var okData = (!dataF || g.dataISO === dataF);
+    var okAcao = (acaoF === 'Todas' || g.acao === acaoF);
+    var okResp = (respF === 'Todos' || g.resp === respF);
+    return okData && okAcao && okResp;
+  });
+}
+
+function copiarResumo(){
+  var lista = filtrar();
+  var texto = '📋 RQA - Resumo\n\n' + lista.map(function(g){ return '• '+g.data+' - '+g.desc+' - '+g.acao+' - '+g.resp; }).join('\n');
+  if(navigator.clipboard) navigator.clipboard.writeText(texto).then(function(){ alert('Copiado!'); });
+  else alert(texto);
+}
+
+function atualizar(){
+  // Atualiza filtro de responsável
+  var resps = [...new Set(lancamentos.map(function(g){ return g.resp; }))].sort();
+  var selResp = document.getElementById('filtroResp');
+  var atualResp = selResp.value || 'Todos';
+  selResp.innerHTML = '<option value="Todos">Todos</option>' + resps.map(function(r){ return '<option value="'+r+'">'+r+'</option>'; }).join('');
+  selResp.value = resps.indexOf(atualResp) > -1 ? atualResp : 'Todos';
+
+  var lista = filtrar();
+  document.getElementById('qtd').textContent = '(' + lista.length + ')';
+  var pend = lancamentos.filter(function(g){ return g.status==='pendente'; }).length;
+  document.getElementById('pendInfo').textContent = pend ? '⏳ ' + pend + ' pendente(s)' : '✅ Sincronizado';
+  var div = document.getElementById('lista');
+  div.innerHTML = '';
+  lista.forEach(function(g){
+    var d = document.createElement('div');
+    d.className = 'item' + (g.id===ultimoId ? ' novo' : '');
+    var left = document.createElement('div');
+    var classeAcao = 'acao-' + g.acao;
+    left.innerHTML = '<b>' + g.desc + '</b><br><span style="font-size:12px;opacity:.7">' + g.data + ' • ' + g.resp + '</span><br><span class="badge '+classeAcao+'">' + g.acao + '</span> <span style="font-size:11px;opacity:.6">' + (g.status==='pendente' ? '⏳ Pendente' : '✅ Sincronizado') + '</span>';
+    var del = document.createElement('button');
+    del.textContent = '×'; del.className = 'del';
+    del.addEventListener('click', function(){ if(confirm('Apagar esse RQA? Isso apaga só no celular. Para apagar na planilha, apague a linha lá.')){ lancamentos = lancamentos.filter(function(x){ return x!==g; }); salvarLocal(); } });
+    d.appendChild(left); d.appendChild(del);
+    div.appendChild(d);
+  });
+  if(lista.length===0) div.innerHTML = '<p style="opacity:.6">Nenhum RQA nesse filtro. Clique no ➕ para lançar.</p>';
+  setStatus((navigator.onLine ? '🟢 Online' : '📴 Offline') + ' • ' + lancamentos.length + ' registros salvos');
+}
+window.addEventListener('online', function(){ atualizar(); sincronizar(true); puxarDaPlanilha(true); });
+window.addEventListener('offline', atualizar);
+atualizar();
+if(navigator.onLine){ sincronizar(true); puxarDaPlanilha(true); }
+</script>
+</body>
+</html>
