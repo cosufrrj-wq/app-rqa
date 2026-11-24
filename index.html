@@ -33,12 +33,6 @@ button{width:100%;padding:15px;border:0;border-radius:14px;background:#22c55e;co
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#22c55e;color:#000;padding:12px 18px;border-radius:99px;font-weight:700;z-index:200;display:none}
 .error{color:#fca5a5;font-size:13px;font-weight:700;display:none;margin-top:8px}
 #status{font-size:12px;opacity:.7;text-align:center;margin-top:8px}
-.acao-Atenção{background:#f59e0b;color:#000}
-.acao-Desvio{background:#3b82f6}
-.acao-Interdição{background:#ef4444}
-.acao-Sinalização{background:#8b5cf6}
-.acao-Limpeza{background:#22c55e;color:#000}
-.acao-Monitoramento{background:#06b6d4;color:#000}
 </style>
 </head>
 <body>
@@ -55,8 +49,8 @@ button{width:100%;padding:15px;border:0;border-radius:14px;background:#22c55e;co
   <label>Filtrar por data</label>
   <input type="date" id="filtroData">
   <button id="btnLimparFiltro" class="btn2">Mostrar todos</button>
-  <label>Filtrar por Ação</label>
-  <select id="filtroAcao"><option value="Todas">Todas as ações</option><option value="Atenção">Atenção</option><option value="Desvio">Desvio</option><option value="Interdição">Interdição</option><option value="Sinalização">Sinalização</option><option value="Limpeza">Limpeza</option><option value="Monitoramento">Monitoramento</option><option value="Outros">Outros</option></select>
+  <label>Filtrar por Ação - digite qualquer palavra</label>
+  <input type="text" id="filtroAcao" placeholder="Ex: Atenção, Desvio, ou qualquer texto que você digitou">
   <label>Filtrar por Responsável</label>
   <select id="filtroResp"><option value="Todos">Todos</option></select>
   <div id="lista" style="margin-top:12px"></div>
@@ -70,17 +64,18 @@ button{width:100%;padding:15px;border:0;border-radius:14px;background:#22c55e;co
   <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">➕ Novo RQA</h3><button id="btnFechar" style="width:auto;padding:8px 14px;background:#334155;color:white;border-radius:99px">✕</button></div>
   <label>Data do RQA *</label><input type="date" id="data">
   <label>Descrição *</label><input type="text" id="desc" placeholder="Ex: Animais na pista, Árvore caída, Buraco">
-  <label>Ação *</label>
-  <select id="acao">
-    <option value="">Selecione a ação</option>
-    <option value="Atenção">Atenção</option>
-    <option value="Desvio">Desvio</option>
-    <option value="Interdição">Interdição</option>
-    <option value="Sinalização">Sinalização</option>
-    <option value="Limpeza">Limpeza</option>
-    <option value="Monitoramento">Monitoramento</option>
-    <option value="Outros">Outros</option>
-  </select>
+  <label>Ação * - digite livremente</label>
+  <input type="text" id="acao" placeholder="Ex: Atenção, Desvio, ou digite o que precisar" list="listaAcoes">
+  <datalist id="listaAcoes">
+    <option value="Atenção">
+    <option value="Desvio">
+    <option value="Interdição">
+    <option value="Sinalização">
+    <option value="Limpeza">
+    <option value="Monitoramento">
+    <option value="Outros">
+  </datalist>
+  <p style="font-size:12px;opacity:.6;margin:6px 0">Pode tocar numa sugestão ou digitar seu próprio texto.</p>
   <label>Responsável *</label>
   <select id="resp"><option value="">Selecione quem lançou</option><option value="Charles">Charles</option><option value="Evelyn">Evelyn</option><option value="Lucas CIAAT">Lucas CIAAT</option><option value="Aris Jonas">Aris Jonas</option><option value="Roberta">Roberta</option></select>
   <div id="erroForm" class="error"></div>
@@ -109,15 +104,15 @@ document.getElementById('btnAdd').addEventListener('click', adicionar);
 document.getElementById('btnSync').addEventListener('click', function(){ sincronizar(false); });
 document.getElementById('btnPuxar').addEventListener('click', function(){ puxarDaPlanilha(false); });
 document.getElementById('btnCopiar').addEventListener('click', copiarResumo);
-document.getElementById('btnLimparFiltro').addEventListener('click', function(){ document.getElementById('filtroData').value=''; atualizar(); });
+document.getElementById('btnLimparFiltro').addEventListener('click', function(){ document.getElementById('filtroData').value=''; document.getElementById('filtroAcao').value=''; atualizar(); });
 document.getElementById('filtroData').addEventListener('change', atualizar);
-document.getElementById('filtroAcao').addEventListener('change', atualizar);
+document.getElementById('filtroAcao').addEventListener('input', atualizar);
 document.getElementById('filtroResp').addEventListener('change', atualizar);
 
 function adicionar(){
   var dataInput = document.getElementById('data').value;
   var desc = document.getElementById('desc').value.trim();
-  var acao = document.getElementById('acao').value;
+  var acao = document.getElementById('acao').value.trim();
   var resp = document.getElementById('resp').value;
   var faltando = [];
   if(!dataInput) faltando.push('Data');
@@ -177,11 +172,11 @@ function puxarDaPlanilha(silencioso){
 
 function filtrar(){
   var dataF = document.getElementById('filtroData').value;
-  var acaoF = document.getElementById('filtroAcao').value;
+  var acaoF = document.getElementById('filtroAcao').value.trim().toLowerCase();
   var respF = document.getElementById('filtroResp').value;
   return lancamentos.filter(function(g){
     var okData = (!dataF || g.dataISO === dataF);
-    var okAcao = (acaoF === 'Todas' || g.acao === acaoF);
+    var okAcao = (!acaoF || String(g.acao||'').toLowerCase().indexOf(acaoF) > -1);
     var okResp = (respF === 'Todos' || g.resp === respF);
     return okData && okAcao && okResp;
   });
@@ -211,8 +206,7 @@ function atualizar(){
     var d = document.createElement('div');
     d.className = 'item' + (g.id===ultimoId ? ' novo' : '');
     var left = document.createElement('div');
-    var classeAcao = 'acao-' + g.acao;
-    left.innerHTML = '<b>' + g.desc + '</b><br><span style="font-size:12px;opacity:.7">' + g.data + ' • ' + g.resp + '</span><br><span class="badge '+classeAcao+'">' + g.acao + '</span> <span style="font-size:11px;opacity:.6">' + (g.status==='pendente' ? '⏳ Pendente' : '✅ Sincronizado') + '</span>';
+    left.innerHTML = '<b>' + g.desc + '</b><br><span style="font-size:12px;opacity:.7">' + g.data + ' • ' + g.resp + '</span><br><span class="badge">' + g.acao + '</span> <span style="font-size:11px;opacity:.6">' + (g.status==='pendente' ? '⏳ Pendente' : '✅ Sincronizado') + '</span>';
     var del = document.createElement('button');
     del.textContent = '×'; del.className = 'del';
     del.addEventListener('click', function(){ if(confirm('Apagar esse RQA? Isso apaga só no celular. Para apagar na planilha, apague a linha lá.')){ lancamentos = lancamentos.filter(function(x){ return x!==g; }); salvarLocal(); } });
