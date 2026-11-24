@@ -83,13 +83,12 @@ button{width:100%;padding:15px;border:0;border-radius:14px;background:#22c55e;co
   </select>
   <label>Responsável *</label>
   <select id="resp"><option value="">Selecione quem lançou</option><option value="Charles">Charles</option><option value="Evelyn">Evelyn</option><option value="Lucas CIAAT">Lucas CIAAT</option><option value="Aris Jonas">Aris Jonas</option><option value="Roberta">Roberta</option></select>
-  <input type="text" id="respOutro" placeholder="Ou digite outro responsável" style="display:none">
   <div id="erroForm" class="error"></div>
   <button id="btnAdd">Salvar RQA - Salva offline</button>
 </div></div>
 
 <script>
-var URL_BASE = "COLE_SEU_LINK_AQUI";
+var URL_BASE = "https://script.google.com/macros/s/AKfycbw7kHmrp4z7aAFrPdVHD2es9sKzlTyn96XJHfscUNVKTxwoHbZaRoj0YTrMfp4suJ_EOw/exec";
 var lancamentos = [];
 var ultimoId = null;
 try{
@@ -106,9 +105,6 @@ function salvarLocal(){ try{ localStorage.setItem('rqa_off', JSON.stringify(lanc
 document.getElementById('fabBtn').addEventListener('click', function(){ document.getElementById('modal').classList.add('open'); });
 document.getElementById('btnFechar').addEventListener('click', fecharModal);
 document.getElementById('modal').addEventListener('click', function(e){ if(e.target.id==='modal') fecharModal(); });
-document.getElementById('resp').addEventListener('change', function(){
-  document.getElementById('respOutro').style.display = (this.value === 'Outros' ? 'block' : 'none');
-});
 document.getElementById('btnAdd').addEventListener('click', adicionar);
 document.getElementById('btnSync').addEventListener('click', function(){ sincronizar(false); });
 document.getElementById('btnPuxar').addEventListener('click', function(){ puxarDaPlanilha(false); });
@@ -122,13 +118,12 @@ function adicionar(){
   var dataInput = document.getElementById('data').value;
   var desc = document.getElementById('desc').value.trim();
   var acao = document.getElementById('acao').value;
-  var respSel = document.getElementById('resp').value;
-  var resp = respSel;
+  var resp = document.getElementById('resp').value;
   var faltando = [];
   if(!dataInput) faltando.push('Data');
   if(!desc) faltando.push('Descrição');
   if(!acao) faltando.push('Ação');
-  if(!respSel) faltando.push('Responsável');
+  if(!resp) faltando.push('Responsável');
   if(faltando.length){
     var el = document.getElementById('erroForm');
     el.textContent = '⚠️ Preencha: ' + faltando.join(', ');
@@ -152,7 +147,6 @@ function sincronizar(silencioso){
   var pend = lancamentos.filter(function(g){ return g.status==='pendente'; });
   if(pend.length===0){ if(!silencioso) alert('Nada para sincronizar'); return; }
   if(!navigator.onLine){ if(!silencioso) alert('Sem internet. Ficou salvo no celular.'); return; }
-  if(URL_BASE.indexOf('COLE_SEU') > -1){ if(!silencioso) alert('Falta colar o link do Apps Script no código.'); return; }
   setStatus('🔄 Sincronizando '+pend.length+'...');
   pend.forEach(function(g){
     var params = new URLSearchParams({acao: 'adicionar', data: g.data, desc: g.desc, acao_rqa: g.acao, resp: g.resp, id: g.id});
@@ -162,7 +156,6 @@ function sincronizar(silencioso){
 
 function puxarDaPlanilha(silencioso){
   if(!navigator.onLine){ if(!silencioso) alert('Sem internet para puxar.'); return; }
-  if(URL_BASE.indexOf('COLE_SEU') > -1){ if(!silencioso) alert('Falta colar o link do Apps Script no código.'); return; }
   setStatus('⬇️ Puxando da planilha...');
   fetch(URL_BASE + '?acao=listar').then(function(res){ return res.text(); }).then(function(texto){
     try{
@@ -202,7 +195,6 @@ function copiarResumo(){
 }
 
 function atualizar(){
-  // Atualiza filtro de responsável
   var resps = [...new Set(lancamentos.map(function(g){ return g.resp; }))].sort();
   var selResp = document.getElementById('filtroResp');
   var atualResp = selResp.value || 'Todos';
